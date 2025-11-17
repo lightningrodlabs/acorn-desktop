@@ -3,15 +3,15 @@ import { defineConfig } from './src/main/defineConfig';
 export default defineConfig({
   appId: 'org.lightningrodlabs.acorn',
   productName: 'Acorn',
-  version: '11.3.4',
+  version: '12.0.0-rc.0',
   macOSCodeSigning: true,
   windowsEVCodeSigning: true,
   fallbackToIndexHtml: true,
   autoUpdates: true,
   systray: true,
   webhapp: {
-    url: 'https://github.com/lightningrodlabs/acorn/releases/download/v11.3.1-alpha/acorn.webhapp',
-    sha256: '948cac0497cc9402c71e11aaa6195b1eb24762384d6a67472b7f0c465140ed15',
+    url: 'https://github.com/lightningrodlabs/acorn/releases/download/happ-v12.0.0-rc.0/acorn.webhapp',
+    sha256: 'e2c12b86a6bf0143529206167bc4069c60ba0850ea0f2bdc82d69468bde21d23',
   },
   passwordMode: 'password-optional',
   bootstrapUrl: 'https://dev-test-bootstrap2.holochain.org/',
@@ -19,28 +19,27 @@ export default defineConfig({
   iceUrls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'],
   bins: {
     holochain: {
-      version: '0.5.6',
+      version: '0.6.0-rc.1',
       sha256: {
         'x86_64-unknown-linux-gnu':
-          'b2dcba7e3f4ef6bb9d8eff33859a3bcb440bbf1f426e1b151ce24b6baaf32f81',
-        'aarch64-unknown-linux-gnu':
-          'ebbe002ea591c367b9f7e85074c2da651c3f54043820cae8bb2b42320fdb1f2f',
+          '91a200205768754fa8841f3f71ba637c3e228e1b6a415eeb254ee8c43b75fae5',
         'x86_64-pc-windows-msvc.exe':
-          '74edb29ec5f0e5edfd19a46cc5b541d6764a534b75cccbd6a8c45ee9ce85dc0b',
-        'x86_64-apple-darwin': 'e7c95fb736b7d34f4aa524938c0a8a1f4c5fcba21be46033f466baa357209ac2',
-        'aarch64-apple-darwin': '2dc2ae70f3aa8732bf36fe7082a41d2871ceef1d13204002e4b9f544a5392ed8',      },
+          'af0c2c7391c7547d6fa6203278419755e933ec83c41fb4d112a40b65cf7b6c44',
+        'aarch64-unknown-linux-gnu': '188a7c6404e1fd1708f5b1b41826cf8c94a26274bbb8540096d0dec21382a1c3',
+        'x86_64-apple-darwin': 'b954e8f969677897055647ab5df0e4da9a7044a4648f71959874a16cd9cd4329',
+        'aarch64-apple-darwin': '68b199575b55e528dae5fd5073273f0b6b23b0d454121eee0809f2a501afe3d1',
+      },
     },
     lair: {
-      version: '0.6.2',
+      version: '0.6.3',
       sha256: {
         'x86_64-unknown-linux-gnu':
-          '3c9ea3dbfc0853743dad3874856fdcfe391dca1769a6a81fc91b7578c73e92a7',
-        'aarch64-unknown-linux-gnu':
-          '2718e7242e3c78ae41afd0fa21bd82dfcfcbfaa72cb421a5067078140fce5142',
+          '56beb19ca4abf39c8e2b90401a9ade10e5c395f6b95cd1853aac05643dce5a11',
         'x86_64-pc-windows-msvc.exe':
-          '6392ce85e985483d43fa01709bfd518f8f67aed8ddfa5950591b4ed51d226b8e',
-        'x86_64-apple-darwin': '746403e5d1655ecf14d95bccaeef11ad1abfc923e428c2f3d87c683edb6fdcdc',
-        'aarch64-apple-darwin': '05c7270749bb1a5cf61b0eb344a7d7a562da34090d5ea81b4c5b6cf040dd32e8',
+          '504e7e3d1afc4426990a4aee190f1137bb474ccb072f7049c23f43fc01c07009',
+        'aarch64-unknown-linux-gnu': '2fcaf1482b70e3df614c631255b2c5af7f01c7927c95b00281a4a1404e2254b0',
+        'x86_64-apple-darwin': 'd7521a0299ea425700091b78e02672b05ad4c97c2ca82643ea9ba2349b0e1e69',
+        'aarch64-apple-darwin': 'cb26b8065f52f7e3ff2d24a09100f60f61a3214e25e170ac2ef607dd040800d7',
       },
     },
   },

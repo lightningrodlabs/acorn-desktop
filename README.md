@@ -11,8 +11,9 @@ This repository let's you easily convert your Holochain app into a standalone, e
 Depending on which Holochain minor version you want to use you should use the corresponding branch of this repository.
 
 
-- Holochain 0.4.x (stable): [main-0.4](https://github.com/holochain/kangaroo-electron/tree/main-0.4)
-- Holochain 0.5.x: [main](https://github.com/holochain/kangaroo-electron/tree/main)
+- Holochain 0.5.x (stable): [main-0.5](https://github.com/holochain/kangaroo-electron/tree/main-0.5)
+- Holochain 0.6.x (dev): [main-0.6](https://github.com/holochain/kangaroo-electron/tree/main)
+- Holochain 0.4.x: [main-0.4](https://github.com/holochain/kangaroo-electron/tree/main-0.4)
 - Holochain 0.3.x: [main-0.3](https://github.com/holochain/kangaroo-electron/tree/main-0.3)
 
 # Instructions
@@ -106,7 +107,7 @@ By default, the kangaroo is set up to check github releases for semver compatibl
 
 ## Versioning
 
-To allow for subsequent incompatible releases of your app (for example due to switching to a new Holochain version or introducing a breaking change in the integrity zomes of your .happ) without having to change the app's name or identifier, the kangaroo is set up to use semver to support incompatible versions of your app running fully independently from each other and store their data in dedicated locations on disk.
+To allow for subsequent incompatible releases of your app (for example due to switching to a new Holochain version) without having to change the app's name or identifier, the kangaroo is set up to use semver to support incompatible versions of your app running fully independently from each other and store their data in dedicated locations on disk.
 
 Examples:
 
