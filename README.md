@@ -4,15 +4,15 @@ Put your Holochain App in this Kangaroo's electron pouch and let it run.
 
 This repository let's you easily convert your Holochain app into a standalone, electron-based cross-platform Desktop app.
 
-**Note:** Support for non-breaking updates to happ coordinator zomes is currently not built into the kangaroo.
+> [!WARNING]
+> Support for non-breaking updates to happ coordinator zomes is currently not built into the kangaroo. It is expected that there is only ever one single version of a happ for any semver compatible range of versions of a kangaroo packaged app (see also [Versioning](#versioning))
 
 # Holochain Versions
 
 Depending on which Holochain minor version you want to use you should use the corresponding branch of this repository.
 
-
-- Holochain 0.5.x (stable): [main-0.5](https://github.com/holochain/kangaroo-electron/tree/main-0.5)
-- Holochain 0.6.x (dev): [main-0.6](https://github.com/holochain/kangaroo-electron/tree/main)
+- Holochain 0.6.x (stable): [main-0.6](https://github.com/holochain/kangaroo-electron/tree/main)
+- Holochain 0.5.x: [main-0.5](https://github.com/holochain/kangaroo-electron/tree/main-0.5)
 - Holochain 0.4.x: [main-0.4](https://github.com/holochain/kangaroo-electron/tree/main-0.4)
 - Holochain 0.3.x: [main-0.3](https://github.com/holochain/kangaroo-electron/tree/main-0.3)
 
@@ -64,7 +64,8 @@ To build the app locally for your platform, run the build command for your respe
 yarn build:linux
 
 # or
-yarn build:mac
+yarn build:mac-arm64 # for Apple Silicon Macs
+yarn build:mac-x64   # for Intel Macs
 
 # or
 yarn build:windows
