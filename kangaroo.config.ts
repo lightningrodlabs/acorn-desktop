@@ -3,14 +3,15 @@ import { defineConfig } from './src/main/defineConfig';
 export default defineConfig({
   appId: 'org.lightningrodlabs.acorn',
   productName: 'Acorn',
-  version: '12.0.0-rc.0',
+  version: '12.0.0',
   macOSCodeSigning: true,
   windowsEVCodeSigning: true,
   fallbackToIndexHtml: true,
   autoUpdates: true,
   systray: true,
   webhapp: {
-    url: 'https://github.com/lightningrodlabs/acorn/releases/download/happ-v12.0.0-rc.0/acorn.webhapp',
+    url: 'https://github.com/lightningrodlabs/acorn/releases/download/happ-v12.0.0/acorn.webhapp',
+    // TODO: Update sha256 after building the new webhapp release
     sha256: 'e2c12b86a6bf0143529206167bc4069c60ba0850ea0f2bdc82d69468bde21d23',
   },
   passwordMode: 'password-optional',
