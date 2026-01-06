@@ -91,7 +91,7 @@ jobs:
           # Modify the postinst script of the .deb file
           node ./scripts/extend-deb-postinst.mjs amd64
           gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "latest-linux.yml" --clobber
-          gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "dist/${{ steps.kangarooConfig.outputs.APP_ID }}_${{ steps.kangarooConfig.outputs.APP_VERSION }}_amd64.deb" --clobber
+          gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "dist/${{ steps.kangarooConfig.outputs.APP_ID }}-${{ steps.kangarooConfig.outputs.APP_VERSION }}-amd64.deb" --clobber
 
       - name: build and upload the app (Ubuntu 22.04 aarch64)
         if: matrix.platform == 'ubuntu-22.04-arm'
@@ -109,7 +109,7 @@ jobs:
           # Modify the postinst script of the .deb file
           node ./scripts/extend-deb-postinst.mjs arm64
           gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "latest-linux-arm64.yml" --clobber
-          gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "dist/${{ steps.kangarooConfig.outputs.APP_ID }}_${{ steps.kangarooConfig.outputs.APP_VERSION }}_arm64.deb" --clobber
+          gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "dist/${{ steps.kangarooConfig.outputs.APP_ID }}-${{ steps.kangarooConfig.outputs.APP_VERSION }}-arm64.deb" --clobber
 
       # Windows
       #---------------------------------------------------------------------------------------
