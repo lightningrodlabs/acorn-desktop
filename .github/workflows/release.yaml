@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [windows-2022, macos-13, macos-latest, ubuntu-22.04, ubuntu-22.04-arm]
+        platform: [windows-2022, macos-latest, ubuntu-22.04, ubuntu-22.04-arm]
     env:
       MACOSX_DEPLOYMENT_TARGET: 10.13
 
@@ -46,7 +46,7 @@ jobs:
           fi
 
       - name: Setup for macOS code signing
-        if: (matrix.platform == 'macos-13' || matrix.platform == 'macos-latest') && steps.kangarooConfig.outputs.MACOS_CODE_SIGNING == 'true'
+        if: matrix.platform == 'macos-latest' && steps.kangarooConfig.outputs.MACOS_CODE_SIGNING == 'true'
         uses: matthme/import-codesign-certs@5565bb656f60c98c8fc515f3444dd8db73545dc2
         with:
           p12-file-base64: ${{ secrets.HBE_APPLE_CERTIFICATE_BASE64 }}
@@ -54,15 +54,6 @@ jobs:
 
       # macOS WITHOUT code signing
       #---------------------------------------------------------------------------------------
-      - name: build and upload the app WITHOUT code signing (macOS x86)
-        if: matrix.platform == 'macos-13' && steps.kangarooConfig.outputs.MACOS_CODE_SIGNING == 'false'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: |
-          yarn build:mac-x64
-          ls dist
-
       - name: build and upload the app WITHOUT code signing (macOS arm64)
         if: matrix.platform == 'macos-latest' && steps.kangarooConfig.outputs.MACOS_CODE_SIGNING == 'false'
         env:
@@ -74,20 +65,6 @@ jobs:
 
       # macOS WITH code signing
       #---------------------------------------------------------------------------------------
-      # Note this issue regarding the if condition: https://github.com/actions/runner/issues/1173
-      - name: build and upload the app WITH code signing (macOS x86)
-        if: matrix.platform == 'macos-13' && steps.kangarooConfig.outputs.MACOS_CODE_SIGNING == 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APPLE_DEV_IDENTITY: ${{ secrets.APPLE_DEV_IDENTITY }}
-          APPLE_ID_EMAIL: ${{ secrets.APPLE_ID_EMAIL }}
-          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          DEBUG: electron-osx-sign*,electron-notarize*
-        run: |
-          yarn build:mac-x64
-          ls dist
-
       - name: build and upload the app WITH code signing (macOS arm64)
         if: matrix.platform == 'macos-latest' && steps.kangarooConfig.outputs.MACOS_CODE_SIGNING == 'true'
         env:
@@ -112,9 +89,9 @@ jobs:
           ls dist
 
           # Modify the postinst script of the .deb file
-          node ./scripts/extend-deb-postinst.mjs
+          node ./scripts/extend-deb-postinst.mjs amd64
           gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "latest-linux.yml" --clobber
-          gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "dist/${{ steps.kangarooConfig.outputs.APP_ID }}-${{ steps.kangarooConfig.outputs.APP_VERSION }}-amd64.deb" --clobber
+          gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "dist/${{ steps.kangarooConfig.outputs.APP_ID }}_${{ steps.kangarooConfig.outputs.APP_VERSION }}_amd64.deb" --clobber
 
       - name: build and upload the app (Ubuntu 22.04 aarch64)
         if: matrix.platform == 'ubuntu-22.04-arm'
@@ -130,9 +107,9 @@ jobs:
           ls dist
 
           # Modify the postinst script of the .deb file
-          node ./scripts/extend-deb-postinst.mjs
+          node ./scripts/extend-deb-postinst.mjs arm64
           gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "latest-linux-arm64.yml" --clobber
-          gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "dist/${{ steps.kangarooConfig.outputs.APP_ID }}-${{ steps.kangarooConfig.outputs.APP_VERSION }}-arm64.deb" --clobber
+          gh release upload "v${{ steps.kangarooConfig.outputs.APP_VERSION }}" "dist/${{ steps.kangarooConfig.outputs.APP_ID }}_${{ steps.kangarooConfig.outputs.APP_VERSION }}_arm64.deb" --clobber
 
       # Windows
       #---------------------------------------------------------------------------------------
@@ -146,7 +123,7 @@ jobs:
           ls dist
 
           # If Windows EV code signing is set to true in kangaroo.config.ts, do code signing here
-          if [ "${{ steps.shouldWindowsCodeSign.outputs.WINDOWS_CODE_SIGNING }}" == "true" ]; then
+          if [ "${{ steps.kangarooConfig.outputs.WINDOWS_CODE_SIGNING }}" == "true" ]; then
 
             # Assumes this setup of EV certificates:
             # https://melatonin.dev/blog/how-to-code-sign-windows-installers-with-an-ev-cert-on-github-actions/
@@ -167,7 +144,7 @@ jobs:
           fi
 
       - name: Merge latest-mac.yml mac release files
-        if: matrix.platform == 'macos-latest' || matrix.platform == 'macos-13'
+        if: matrix.platform == 'macos-latest'
         run: |
           node ./scripts/merge-mac-yamls.mjs
         env:
