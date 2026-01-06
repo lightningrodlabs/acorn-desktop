@@ -11,8 +11,7 @@ export default defineConfig({
   systray: true,
   webhapp: {
     url: 'https://github.com/lightningrodlabs/acorn/releases/download/happ-v12.0.0/acorn.webhapp',
-    // TODO: Update sha256 after building the new webhapp release
-    sha256: 'e2c12b86a6bf0143529206167bc4069c60ba0850ea0f2bdc82d69468bde21d23',
+    sha256: '9bb73d1cc0e48ded3fad1d780af684741ba712ae46a5255527a4f7083e55d8e3',
   },
   passwordMode: 'password-optional',
   bootstrapUrl: 'https://dev-test-bootstrap2.holochain.org/',
