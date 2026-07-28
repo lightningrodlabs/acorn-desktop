@@ -95,16 +95,17 @@ export async function launch(
 
   const appToken = await holochainManager.getAppToken();
 
-  console.log('Starting main window...');
-
-  if (splashscreenWindow) splashscreenWindow.close();
-
   // With a harness backend configured (ACORN_HARNESS_CMD or the direct-backend
   // env), serve the UI from the embedded harness host on localhost — same
   // origin as the sidecar WS, so the chat panel works with zero renderer
   // config. Without it, the stock webhapp:// path is untouched.
+  // MUST happen BEFORE the splashscreen closes: window-all-closed quits the
+  // app unconditionally (index.ts), so no await may sit between closing the
+  // splash and constructing the main window.
   let uiSource: UISource = { type: 'path', path: UI_DIRECTORY };
   if (harnessConfigured()) {
+    if (splashscreenWindow)
+      splashscreenWindow.webContents.send('loading-progress-update', 'Starting LLM harness...');
     const host = await startHarnessHost({
       uiDir: UI_DIRECTORY,
       appId: HAPP_APP_ID,
@@ -113,6 +114,10 @@ export async function launch(
     });
     uiSource = { type: 'port', port: host.port };
   }
+
+  console.log('Starting main window...');
+
+  if (splashscreenWindow) splashscreenWindow.close();
 
   const mainWindow = await createHappWindow(
     uiSource,

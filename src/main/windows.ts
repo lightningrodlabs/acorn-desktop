@@ -68,21 +68,11 @@ export const createHappWindow = async (
     if (fs.existsSync(ICON_PATH)) {
       icon = nativeImage.createFromPath(ICON_PATH);
     }
-  } else {
-    try {
-      const iconResponse = await net.fetch(`http://localhost:${uiSource.port}/icon.png`);
-      if (iconResponse.status === 404) {
-        console.warn(
-          'No icon.png found. It is recommended to put an icon.png file (1024x1024 pixel) in the root of your UI assets directory.'
-        );
-      } else {
-        const buffer = await iconResponse.arrayBuffer();
-        icon = nativeImage.createFromBuffer(Buffer.from(buffer));
-      }
-    } catch (e) {
-      console.error('Failed to get icon.png: ', e);
-    }
   }
+  // port mode fetches its icon AFTER the window exists (below): the
+  // splashscreen is already closed here, and any await before the
+  // BrowserWindow constructor leaves a moment with zero windows — which
+  // fires window-all-closed and quits the whole app (index.ts).
 
   console.log('Instantiating browser window');
 
@@ -96,6 +86,25 @@ export const createHappWindow = async (
       preload: path.resolve(__dirname, '../preload/happ.js'),
     },
   });
+
+  if (uiSource.type === 'port') {
+    try {
+      const iconResponse = await net.fetch(`http://localhost:${uiSource.port}/icon.png`);
+      if (iconResponse.status === 404) {
+        console.warn(
+          'No icon.png found. It is recommended to put an icon.png file (1024x1024 pixel) in the root of your UI assets directory.'
+        );
+      } else {
+        const buffer = await iconResponse.arrayBuffer();
+        // setIcon exists on Windows/Linux only; macOS uses the app/dock icon
+        if (process.platform !== 'darwin') {
+          happWindow.setIcon(nativeImage.createFromBuffer(Buffer.from(buffer)));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to get icon.png: ', e);
+    }
+  }
 
   console.log('setLinkOpenHandlers');
 

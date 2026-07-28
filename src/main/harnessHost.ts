@@ -132,12 +132,15 @@ export async function startHarnessHost(opts: {
       res.end('forbidden');
       return;
     }
-    if (
-      file === opts.uiDir ||
-      file === path.join(opts.uiDir, 'index.html') ||
-      !fs.existsSync(file) ||
-      fs.statSync(file).isDirectory()
-    ) {
+    const missing = !fs.existsSync(file) || fs.statSync(file).isDirectory();
+    if (missing && path.extname(file)) {
+      // a missing FILE (has an extension) is a real 404, not a SPA route —
+      // windows.ts relies on this to detect an absent icon.png
+      res.statusCode = 404;
+      res.end('not found');
+      return;
+    }
+    if (file === opts.uiDir || file === path.join(opts.uiDir, 'index.html') || missing) {
       // index + SPA fallback both get the injected page
       serveIndex(res);
       return;
