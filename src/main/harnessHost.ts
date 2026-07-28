@@ -94,9 +94,12 @@ export async function startHarnessHost(opts: {
   // difference.
   const indexHtml = (): string => {
     const raw = fs.readFileSync(path.join(opts.uiDir, 'index.html'), 'utf8');
+    // __ACORN_HARNESS__ is the runtime signal that a harness lives on this
+    // origin — it lights up the chat panel in the NORMAL release webhapp
+    // (devSidecarClient.available), so no special UI build is needed.
     let content = raw.replace(
       '<head>',
-      `<head><script type="module">window.__HC_LAUNCHER_ENV__ = { APP_INTERFACE_PORT: ${opts.appPort}, INSTALLED_APP_ID: "${opts.appId}", APP_INTERFACE_TOKEN: [${opts.appToken}] };</script>`
+      `<head><script type="module">window.__HC_LAUNCHER_ENV__ = { APP_INTERFACE_PORT: ${opts.appPort}, INSTALLED_APP_ID: "${opts.appId}", APP_INTERFACE_TOKEN: [${opts.appToken}] }; window.__ACORN_HARNESS__ = true;</script>`
     );
     content = content.replace(/<title>.*?<\/title>/i, '');
     return content;
