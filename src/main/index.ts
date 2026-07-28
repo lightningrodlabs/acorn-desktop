@@ -130,7 +130,20 @@ contextMenu({
   ],
 });
 
-const KANGAROO_FILESYSTEM = KangarooFileSystem.connect(app, RUN_OPTIONS.profile);
+let KANGAROO_FILESYSTEM = KangarooFileSystem.connect(app, RUN_OPTIONS.profile);
+
+// Dev affordance: ACORN_FRESH=1 wipes the whole profile (conductor data,
+// keystore, chromium storage — everything a factory reset removes) before
+// launch, for a from-scratch run. Combine with --profile to keep sandboxes
+// separate. Without it, state restores across launches as normal.
+if (process.env.ACORN_FRESH) {
+  const userData = app.getPath('userData');
+  console.log(`[ACORN_FRESH] wiping profile data at ${userData}`);
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require('fs').rmSync(userData, { recursive: true, force: true });
+  // recreate the directory skeleton the deleted tree contained
+  KANGAROO_FILESYSTEM = KangarooFileSystem.connect(app, RUN_OPTIONS.profile);
+}
 
 const KANGAROO_EMITTER = new KangarooEmitter();
 

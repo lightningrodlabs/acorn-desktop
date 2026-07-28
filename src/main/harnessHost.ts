@@ -172,9 +172,26 @@ export async function startHarnessHost(opts: {
     next();
   });
 
+  // FIXED port by default: the port is the browser ORIGIN, and the renderer's
+  // localStorage/IndexedDB (profile-setup state, view prefs) are keyed by it —
+  // an ephemeral port would make every launch look like a first run even
+  // though the conductor data persisted. ACORN_HARNESS_PORT overrides
+  // (0 = ephemeral, if you explicitly want a throwaway origin).
+  const wantPort =
+    process.env.ACORN_HARNESS_PORT != null && process.env.ACORN_HARNESS_PORT !== ''
+      ? Number(process.env.ACORN_HARNESS_PORT)
+      : 8931;
   const port: number = await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => {
+    server.once('error', (e: NodeJS.ErrnoException) => {
+      reject(
+        e.code === 'EADDRINUSE'
+          ? new Error(
+              `harness host port ${wantPort} is in use (another instance?) — set ACORN_HARNESS_PORT to change it`
+            )
+          : e
+      );
+    });
+    server.listen(wantPort, '127.0.0.1', () => {
       const addr = server.address();
       if (addr && typeof addr === 'object') resolve(addr.port);
       else reject(new Error('no address'));
