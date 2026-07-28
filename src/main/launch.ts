@@ -12,7 +12,8 @@ import {
   LAIR_BINARY,
   UI_DIRECTORY,
 } from './const';
-import { createHappWindow } from './windows';
+import { createHappWindow, UISource } from './windows';
+import { harnessConfigured, startHarnessHost } from './harnessHost';
 import { ZomeCallSigner } from '@holochain/hc-spin-rust-utils';
 import { HolochainManager } from './holochainManager';
 
@@ -98,11 +99,23 @@ export async function launch(
 
   if (splashscreenWindow) splashscreenWindow.close();
 
+  // With a harness backend configured (ACORN_HARNESS_CMD or the direct-backend
+  // env), serve the UI from the embedded harness host on localhost — same
+  // origin as the sidecar WS, so the chat panel works with zero renderer
+  // config. Without it, the stock webhapp:// path is untouched.
+  let uiSource: UISource = { type: 'path', path: UI_DIRECTORY };
+  if (harnessConfigured()) {
+    const host = await startHarnessHost({
+      uiDir: UI_DIRECTORY,
+      appId: HAPP_APP_ID,
+      appPort: holochainManager.appPort,
+      appToken,
+    });
+    uiSource = { type: 'port', port: host.port };
+  }
+
   const mainWindow = await createHappWindow(
-    {
-      type: 'path',
-      path: UI_DIRECTORY,
-    },
+    uiSource,
     HAPP_APP_ID,
     holochainManager.appPort,
     appToken,
