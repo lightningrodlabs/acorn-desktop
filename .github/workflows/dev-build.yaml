@@ -1,0 +1,76 @@
+name: 'dev-build'
+
+# Manually-dispatched Linux dev build: pulls a DEV webhapp (published by the
+# acorn repo's dev-webhapp workflow), builds the AppImage under the dev
+# identity (Acorn Dev / org.lightningrodlabs.acorn.dev — separate data root
+# and network seed, auto-updates off), and publishes it as a prerelease
+# tagged dev-v<version>-<shortsha>. No signing, no update-feed files.
+on:
+  workflow_dispatch:
+    inputs:
+      webhapp_tag:
+        description: 'acorn release tag to pull the dev webhapp from (e.g. happ-dev-abc1234)'
+        required: true
+        type: string
+
+jobs:
+  dev-build-linux:
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: install dependencies
+        run: yarn
+
+      - name: apply dev identity
+        run: node ./scripts/overwrite-with-dev-name.js
+
+      - name: fetch holochain + lair binaries
+        run: yarn fetch:binaries
+
+      - name: fetch dev webhapp into pouch (sha256-verified)
+        shell: bash
+        run: |
+          BASE="https://github.com/lightningrodlabs/acorn/releases/download/${{ inputs.webhapp_tag }}"
+          curl -L --fail -o pouch/acorn.webhapp "$BASE/acorn.webhapp"
+          curl -L --fail -o /tmp/acorn.webhapp.sha256 "$BASE/acorn.webhapp.sha256"
+          cd pouch
+          echo "$(cut -d' ' -f1 /tmp/acorn.webhapp.sha256)  acorn.webhapp" | shasum -a 256 -c -
+
+      - name: build AppImage
+        # no GITHUB_TOKEN here on purpose: electron-builder must NOT try to
+        # auto-publish; the release is created explicitly below
+        run: yarn build:appimage
+
+      - name: Read version + shas
+        id: meta
+        shell: bash
+        run: |
+          echo "APP_VERSION=$(node -p -e "require('./package.json').version")" >> $GITHUB_OUTPUT
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          ls dist/*.AppImage
+
+      - id: create-release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: false
+          artifacts: dist/*.AppImage
+          body: |
+            Linux DEV build (`Acorn Dev`, appId `org.lightningrodlabs.acorn.dev`) — separate data directory and network from production Acorn; auto-updates disabled.
+
+            - acorn-desktop: `${{ github.ref_name }}` @ ${{ github.sha }}
+            - webhapp: [`${{ inputs.webhapp_tag }}`](https://github.com/lightningrodlabs/acorn/releases/tag/${{ inputs.webhapp_tag }})
+
+            Launch with an LLM harness: `ACORN_HARNESS_CMD='npx -y @agentclientprotocol/claude-agent-acp' ./Acorn*.AppImage` (or the `ACORN_OPENAI_*` direct-backend vars). Without harness env it behaves as a stock build. Verify you are on the intended network by comparing the base DNA hashes in the app's version tooltip.
+          name: 'Acorn Dev v${{ steps.meta.outputs.APP_VERSION }} @ ${{ steps.meta.outputs.SHORT_SHA }} (Linux)'
+          tag: dev-v${{ steps.meta.outputs.APP_VERSION }}-${{ steps.meta.outputs.SHORT_SHA }}
+          commit: ${{ github.sha }}
+          prerelease: true
+          draft: false
