@@ -8,6 +8,7 @@ import { HolochainVersion, KangarooEmitter } from './eventEmitter';
 import split from 'split';
 import { AdminWebsocket, AppAuthenticationToken, AppInfo } from '@holochain/client';
 import { KangarooFileSystem } from './filesystem';
+import { appInterfaceAllowedOrigins } from './harnessHost';
 import { CONDUCTOR_CONFIG_TEMPLATE, HAPP_APP_ID, HAPP_PATH, KANGAROO_CONFIG } from './const';
 import { app } from 'electron';
 
@@ -152,12 +153,24 @@ export class HolochainManager {
           const installedApps = await adminWebsocket.listApps({});
           const appInterfaces = await adminWebsocket.listAppInterfaces();
           console.log('Got appInterfaces: ', appInterfaces);
+          // Reuse an interface only if its allowed_origins cover this run —
+          // the conductor 400s WS handshakes from unlisted origins, and with
+          // the harness on, the UI's origin is the harness host (localhost),
+          // not webhapp://. An interface persisted by an earlier run without
+          // the harness origin must not be reused for a harness run.
+          const wantedOrigins = app.isPackaged ? appInterfaceAllowedOrigins() : '*';
+          const covers = (allowed: string): boolean =>
+            allowed === '*' ||
+            wantedOrigins
+              .split(',')
+              .every((origin) => allowed.split(',').includes(origin));
+          const usable = appInterfaces.find((i) => covers(i.allowed_origins));
           let appPort;
-          if (appInterfaces.length > 0) {
-            appPort = appInterfaces[0].port;
+          if (usable) {
+            appPort = usable.port;
           } else {
             const attachAppInterfaceResponse = await adminWebsocket.attachAppInterface({
-              allowed_origins: app.isPackaged ? 'webhapp://webhappwindow' : '*',
+              allowed_origins: wantedOrigins,
             });
             console.log('Attached app interface port: ', attachAppInterfaceResponse);
             appPort = attachAppInterfaceResponse.port;

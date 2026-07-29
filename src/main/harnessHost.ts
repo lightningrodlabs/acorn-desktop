@@ -53,6 +53,25 @@ export function harnessConfigured(): boolean {
   return Boolean(process.env.ACORN_OPENAI_BASE_URL && process.env.ACORN_OPENAI_MODEL);
 }
 
+/** The host's port — FIXED by default so the browser origin (and with it the
+ * renderer's localStorage) is stable across launches. ACORN_HARNESS_PORT
+ * overrides; 0 means ephemeral (a deliberately throwaway origin). */
+export function harnessPort(): number {
+  return process.env.ACORN_HARNESS_PORT != null && process.env.ACORN_HARNESS_PORT !== ''
+    ? Number(process.env.ACORN_HARNESS_PORT)
+    : 8931;
+}
+
+/** The allowed_origins the conductor's app interface needs for THIS run
+ * (packaged): the webhapp:// origin, plus the harness host's localhost origin
+ * when the harness is on — the conductor 400s WS handshakes from origins not
+ * in this list. (An ephemeral port can't be pre-allowed; use the default.) */
+export function appInterfaceAllowedOrigins(): string {
+  const webhapp = 'webhapp://webhappwindow';
+  if (!harnessConfigured() || harnessPort() === 0) return webhapp;
+  return `${webhapp},http://localhost:${harnessPort()}`;
+}
+
 function harnessDir(): string {
   // staged into resources/harness by scripts/prepare-harness.js — real files
   // in dev AND packaged builds (resources/** ships asar-unpacked)
@@ -178,15 +197,7 @@ export async function startHarnessHost(opts: {
     next();
   });
 
-  // FIXED port by default: the port is the browser ORIGIN, and the renderer's
-  // localStorage/IndexedDB (profile-setup state, view prefs) are keyed by it —
-  // an ephemeral port would make every launch look like a first run even
-  // though the conductor data persisted. ACORN_HARNESS_PORT overrides
-  // (0 = ephemeral, if you explicitly want a throwaway origin).
-  const wantPort =
-    process.env.ACORN_HARNESS_PORT != null && process.env.ACORN_HARNESS_PORT !== ''
-      ? Number(process.env.ACORN_HARNESS_PORT)
-      : 8931;
+  const wantPort = harnessPort();
   const port: number = await new Promise((resolve, reject) => {
     server.once('error', (e: NodeJS.ErrnoException) => {
       reject(
