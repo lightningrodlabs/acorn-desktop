@@ -43,6 +43,12 @@ export const HAPP_APP_ID = 'kangaroo.happ';
 
 export const UI_DIRECTORY = path.join(RESOURCES_DIRECTORY, 'ui');
 
+// the vendored LLM harness, staged by scripts/prepare-harness.js; under
+// resources/ it ships asar-UNPACKED (real files — the ACP agent spawns
+// acornToolsServer.js by path and cannot read inside app.asar). Its runtime
+// deps are injected by harnessHost.ts, so nothing here needs node_modules.
+export const HARNESS_DIRECTORY = path.join(RESOURCES_DIRECTORY, 'harness');
+
 export const ICON_PATH = path.join(RESOURCES_DIRECTORY, 'ui', 'icon.png');
 
 export const SYSTRAY_ICON_PATH = path.join(RESOURCES_DIRECTORY, 'icons', '32x32@2x.png');

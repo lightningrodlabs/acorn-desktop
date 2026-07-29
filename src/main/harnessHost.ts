@@ -21,8 +21,10 @@ import fs from 'fs';
 import http from 'http';
 import path from 'path';
 import { createRequire } from 'module';
-import { app } from 'electron';
+import { WebSocketServer } from 'ws';
+import * as acp from '@agentclientprotocol/sdk';
 import { AppAuthenticationToken, InstalledAppId } from '@holochain/client';
+import { HARNESS_DIRECTORY } from './const';
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -52,10 +54,9 @@ export function harnessConfigured(): boolean {
 }
 
 function harnessDir(): string {
-  // dev: <repo>/harness. (Packaging note: ship this dir OUTSIDE app.asar —
-  // extraResources or asarUnpack — because acornToolsServer.js is spawned as a
-  // plain child process; revisit at packaging time.)
-  return path.join(app.getAppPath(), 'harness');
+  // staged into resources/harness by scripts/prepare-harness.js — real files
+  // in dev AND packaged builds (resources/** ships asar-unpacked)
+  return HARNESS_DIRECTORY;
 }
 
 export interface HarnessHostHandle {
@@ -71,7 +72,7 @@ export async function startHarnessHost(opts: {
 }): Promise<HarnessHostHandle> {
   const dir = harnessDir();
   if (!fs.existsSync(path.join(dir, 'sidecar.js'))) {
-    throw new Error(`harness modules missing at ${dir} — run \`node scripts/sync-harness.js\``);
+    throw new Error(`harness modules missing at ${dir} — run \`node scripts/prepare-harness.js\``);
   }
 
   // Defaults for the vendored copies; explicit env still wins, matching the
@@ -88,6 +89,11 @@ export async function startHarnessHost(opts: {
   const sidecar: any = nodeRequire(path.join(dir, 'sidecar.js'));
   const bridges: any = nodeRequire(path.join(dir, 'bridges.js'));
   /* eslint-enable @typescript-eslint/no-explicit-any */
+  // The sidecar sits outside the app bundle (see HARNESS_DIRECTORY) where its
+  // own require/import can't reach node_modules — hand it its runtime deps,
+  // which THIS bundle carries (ws externalized to asar node_modules; the
+  // ESM-only ACP SDK bundled in via electron.vite.config.ts exclude).
+  sidecar.injectHarnessDeps({ WebSocketServer, acp });
 
   // index.html with the launcher env seated — the exact transform the
   // webhapp:// handler applies in windows.ts, so the renderer can't tell the

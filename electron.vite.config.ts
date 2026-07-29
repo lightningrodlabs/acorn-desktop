@@ -3,7 +3,13 @@ import { resolve } from 'path';
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin({ exclude: ['@holochain/client', 'get-port', 'nanoid'] })],
+    plugins: [
+      externalizeDepsPlugin({
+        // excluded = BUNDLED into out/main (the ESM-only deps); zod rides
+        // along for @agentclientprotocol/sdk's zod/v4 subpath imports
+        exclude: ['@holochain/client', 'get-port', 'nanoid', '@agentclientprotocol/sdk', 'zod'],
+      }),
+    ],
   },
   preload: {
     build: {

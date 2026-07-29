@@ -5,5 +5,5 @@ repo (web/dev-harness/, clarity-engine/) and re-run the sync.
 
 - source: /home/eric/code/metacurrency/holochain/acorn/.claude/worktrees/standalone-build
 - branch: standalone-build
-- commit: 5d7e74f68076305f8d5276d1f72d4504b49284b1
+- commit: 11ac4da00bf2f860f020636044fbb85dc328c47c
 - files: web/dev-harness/sidecar.js, web/dev-harness/bridges.js, web/dev-harness/directBackend.js, web/dev-harness/promptContext.js, web/dev-harness/systemSlot.js, web/dev-harness/skill.js, web/dev-harness/mcpConfig.js, web/dev-harness/acornToolsServer.js, web/dev-harness/acorn-system-prompt.md, clarity-engine/clarity-tree-skill.md
