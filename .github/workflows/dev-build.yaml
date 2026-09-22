@@ -26,7 +26,7 @@ jobs:
     outputs:
       tag: ${{ steps.meta.outputs.TAG }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Read version + short sha
         id: meta
@@ -86,10 +86,10 @@ jobs:
     env:
       MACOSX_DEPLOYMENT_TARGET: 10.13
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 
@@ -112,15 +112,16 @@ jobs:
           echo "$(cut -d' ' -f1 /tmp/acorn.webhapp.sha256)  acorn.webhapp" | shasum -a 256 -c -
 
       - name: build (${{ matrix.platform }})
-        # no GITHUB_TOKEN here on purpose: electron-builder must NOT try to
-        # auto-publish. CSC_IDENTITY_AUTO_DISCOVERY=false = unsigned macOS
-        # build (same path as release.yaml's macOSCodeSigning=false branch);
-        # electron-builder then also skips the afterSign/notarize hook.
+        # --publish never: electron-builder auto-detects CI and would otherwise
+        # try to publish (and fail without a token) — the prerelease is
+        # created explicitly above. CSC_IDENTITY_AUTO_DISCOVERY=false =
+        # unsigned macOS build; scripts/notarize.js skips itself when no
+        # Apple credentials are present.
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
         shell: bash
         run: |
-          yarn ${{ matrix.build }}
+          yarn ${{ matrix.build }} --publish never
           ls dist
 
       - name: upload to the prerelease
