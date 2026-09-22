@@ -1,0 +1,131 @@
+name: 'dev-build'
+
+# Manually-dispatched DEV build: pulls a DEV webhapp (published by the acorn
+# repo's dev-webhapp workflow), builds under the dev identity (Acorn Dev /
+# org.lightningrodlabs.acorn.dev — separate data root and network seed,
+# auto-updates off), and publishes a prerelease tagged dev-v<version>-<shortsha>
+# with a Linux AppImage and a macOS (Apple Silicon) DMG. No signing, no
+# notarization, no update-feed files.
+#
+# Two stages so the platform builds can run in parallel without racing to
+# create the same release: `create-release` makes the (empty) prerelease,
+# then the `build` matrix uploads each platform's artifact into it.
+on:
+  workflow_dispatch:
+    inputs:
+      webhapp_tag:
+        description: 'acorn release tag to pull the dev webhapp from (e.g. happ-dev-abc1234)'
+        required: true
+        type: string
+
+jobs:
+  create-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.meta.outputs.TAG }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version + short sha
+        id: meta
+        shell: bash
+        run: |
+          APP_VERSION=$(node -p -e "require('./package.json').version")
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_OUTPUT
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "TAG=dev-v$APP_VERSION-$SHORT_SHA" >> $GITHUB_OUTPUT
+
+      - uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: false
+          body: |
+            DEV build (`Acorn Dev`, appId `org.lightningrodlabs.acorn.dev`) — separate data directory and network from production Acorn; auto-updates disabled. Unsigned.
+
+            - acorn-desktop: `${{ github.ref_name }}` @ ${{ github.sha }}
+            - webhapp: [`${{ inputs.webhapp_tag }}`](https://github.com/lightningrodlabs/acorn/releases/tag/${{ inputs.webhapp_tag }})
+
+            Verify you are on the intended network by comparing the base DNA hashes in the app's version tooltip.
+
+            ### Launching with an LLM harness
+
+            The harness is configured through environment variables, so launch from a terminal. Without harness env the app behaves as a stock build. `npx` needs Node on your PATH; the Claude agent needs a Claude login or `ANTHROPIC_API_KEY`. The `ACORN_OPENAI_*` variables select the direct OpenAI-compatible backend instead.
+
+            **Linux** (AppImage):
+
+                chmod +x Acorn*.AppImage
+                ACORN_HARNESS_CMD='npx -y @agentclientprotocol/claude-agent-acp' ./Acorn*.AppImage
+
+            **macOS** (Apple Silicon DMG, unsigned): drag `Acorn Dev.app` to Applications, strip the quarantine attribute (macOS otherwise reports the app as damaged), then launch the binary directly so it inherits your shell environment:
+
+                xattr -r -d com.apple.quarantine "/Applications/Acorn Dev.app"
+                ACORN_HARNESS_CMD='npx -y @agentclientprotocol/claude-agent-acp' "/Applications/Acorn Dev.app/Contents/MacOS/Acorn Dev"
+          name: 'Acorn Dev v${{ steps.meta.outputs.APP_VERSION }} @ ${{ steps.meta.outputs.SHORT_SHA }}'
+          tag: ${{ steps.meta.outputs.TAG }}
+          commit: ${{ github.sha }}
+          prerelease: true
+          draft: false
+
+  build:
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            build: build:appimage
+            artifacts: dist/*.AppImage
+          - platform: macos-latest
+            build: build:mac-arm64
+            artifacts: dist/*.dmg
+    permissions:
+      contents: write
+    runs-on: ${{ matrix.platform }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 10.13
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: install dependencies
+        run: yarn
+
+      - name: apply dev identity
+        run: node ./scripts/overwrite-with-dev-name.js
+
+      - name: fetch holochain + lair binaries
+        run: yarn fetch:binaries
+
+      - name: fetch dev webhapp into pouch (sha256-verified)
+        shell: bash
+        run: |
+          BASE="https://github.com/lightningrodlabs/acorn/releases/download/${{ inputs.webhapp_tag }}"
+          curl -L --fail -o pouch/acorn.webhapp "$BASE/acorn.webhapp"
+          curl -L --fail -o /tmp/acorn.webhapp.sha256 "$BASE/acorn.webhapp.sha256"
+          cd pouch
+          echo "$(cut -d' ' -f1 /tmp/acorn.webhapp.sha256)  acorn.webhapp" | shasum -a 256 -c -
+
+      - name: build (${{ matrix.platform }})
+        # no GITHUB_TOKEN here on purpose: electron-builder must NOT try to
+        # auto-publish. CSC_IDENTITY_AUTO_DISCOVERY=false = unsigned macOS
+        # build (same path as release.yaml's macOSCodeSigning=false branch);
+        # electron-builder then also skips the afterSign/notarize hook.
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        shell: bash
+        run: |
+          yarn ${{ matrix.build }}
+          ls dist
+
+      - name: upload to the prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ needs.create-release.outputs.tag }}" ${{ matrix.artifacts }} --clobber
