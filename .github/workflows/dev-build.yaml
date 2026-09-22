@@ -55,8 +55,10 @@ jobs:
 
             **Linux** (AppImage):
 
-                chmod +x Acorn*.AppImage
-                ACORN_HARNESS_CMD='npx -y @agentclientprotocol/claude-agent-acp' ./Acorn*.AppImage
+                chmod +x org.lightningrodlabs.acorn.dev-*.AppImage
+                ACORN_HARNESS_CMD='npx -y @agentclientprotocol/claude-agent-acp' ./org.lightningrodlabs.acorn.dev-*.AppImage
+
+            If it exits with a "SUID sandbox helper" error (Ubuntu 24.04+ AppArmor), append `--no-sandbox` to the command.
 
             **macOS** (Apple Silicon DMG, unsigned): drag `Acorn Dev.app` to Applications, strip the quarantine attribute (macOS otherwise reports the app as damaged), then launch the binary directly so it inherits your shell environment:
 
