@@ -81,6 +81,11 @@ kangarooCli
     'Print holochain logs directly to the terminal (they will be still written to the logfile as well)'
   );
 
+// Electron/Chromium switches (--no-sandbox, --disable-gpu, --ozone-platform=…)
+// reach process.argv untouched; they aren't kangaroo options, so let them pass
+// instead of aborting startup with "unknown option" (same as Moss).
+kangarooCli.allowUnknownOption(true);
+
 kangarooCli.parse();
 
 const RUN_OPTIONS = validateArgs(kangarooCli.opts());
